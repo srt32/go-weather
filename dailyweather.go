@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-  key := "0f6245300051aad2906d3ebfd37002b2"
+  key := "xxx"
 
   lat := "35"
   long := "-122"
