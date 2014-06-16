@@ -10,10 +10,9 @@ func main() {
 	lat := "37.7833"
 	long := "-122.4167"
 
-	currentConditions := fetchConditionsFor(lat, long)
-
-	results := stringifyResults(currentConditions)
-	fmt.Printf(results)
+	current := fetchConditionsFor(lat, long).Currently
+	c := conditions{current.Summary, current.Temperature, current.CloudCover, current.Humidity, current.Visibility}
+	fmt.Println(c)
 }
 
 func fetchConditionsFor(lat, long string) (f *forecast.Forecast) {
@@ -27,17 +26,24 @@ func fetchConditionsFor(lat, long string) (f *forecast.Forecast) {
 	return
 }
 
-func stringifyResults(f *forecast.Forecast) (prettyForecast string) {
-	prettyForecast +=
-		fmt.Sprintf("Summary: %s", f.Currently.Summary) +
-			fmt.Sprintf("\n") +
-			fmt.Sprintf("Temperature: %.2f", f.Currently.Temperature) +
-			fmt.Sprintf("\n") +
-			fmt.Sprintf("Cloud Cover: %.2f", f.Currently.CloudCover) +
-			fmt.Sprintf("\n") +
-			fmt.Sprintf("Humidity: %.2f", f.Currently.Humidity) +
-			fmt.Sprintf("\n") +
-			fmt.Sprintf("Visibility: %.2f", f.Currently.Visibility)
+type conditions struct {
+	Summary     string
+	Temperature float64
+	CloudCover  float64
+	Humidity    float64
+	Visibility  float64
+}
 
-	return
+func (c conditions) String() string {
+	prettyForecast :=
+		fmt.Sprintf("Summary: %s", c.Summary) +
+			fmt.Sprintf("\n") +
+			fmt.Sprintf("Temperature: %.2f", c.Temperature) +
+			fmt.Sprintf("\n") +
+			fmt.Sprintf("Cloud Cover: %.2f", c.CloudCover) +
+			fmt.Sprintf("\n") +
+			fmt.Sprintf("Humidity: %.2f", c.Humidity) +
+			fmt.Sprintf("\n") +
+			fmt.Sprintf("Visibility: %.2f", c.Visibility)
+	return prettyForecast
 }
