@@ -7,12 +7,18 @@ import (
 )
 
 func main() {
+	c := fetchAllLocations()
+
+	fmt.Println(c)
+}
+
+func fetchAllLocations() (c conditions) {
 	lat := "37.7833"
 	long := "-122.4167"
 
 	current := fetchConditionsFor(lat, long).Currently
-	c := conditions{current.Summary, current.Temperature, current.CloudCover, current.Humidity, current.Visibility}
-	fmt.Println(c)
+	c = conditions{current.Summary, current.Temperature, current.CloudCover, current.Humidity, current.Visibility}
+	return
 }
 
 func fetchConditionsFor(lat, long string) (f *forecast.Forecast) {
