@@ -48,14 +48,14 @@ func fetchFromDatabase() conditions {
   var temperature float64
   var visibility float64
   var location_id int
-  var created_at string
+  var created_at time.Time
 
   err := latestRecordedConditions.Scan(&cloudCover, &humidity, &summary, &temperature, &visibility, &location_id, &created_at)
   if err != nil {
     log.Fatal(err)
   }
 
-  return conditions{"foo", 10, cloudCover, 10, 10}
+  return conditions{summary, temperature, cloudCover, humidity, visibility}
 }
 
 func fetchConditionsFor(lat, long string) (c conditions) {
