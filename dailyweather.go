@@ -8,6 +8,7 @@ import (
   _ "github.com/lib/pq"
   "database/sql"
 	"os"
+  "time"
 )
 
 // createdb weather_development
@@ -31,8 +32,30 @@ func retrieveLatestConditions(res http.ResponseWriter, req *http.Request) {
 
   insertCondition(current)
 
-  data := []byte("foo")
+  latestConditions := fetchFromDatabase()
+
+  data := []byte(fmt.Sprintln(latestConditions))
   res.Write(data)
+}
+
+func fetchFromDatabase() conditions {
+  db := openDatabase()
+  latestRecordedConditions := db.QueryRow(`SELECT * FROM conditions WHERE location_id IS NOT NULL ORDER BY created_at ASC LIMIT 1;`)
+
+  var cloudCover float64
+  var humidity float64
+  var summary string
+  var temperature float64
+  var visibility float64
+  var location_id int
+  var created_at string
+
+  err := latestRecordedConditions.Scan(&cloudCover, &humidity, &summary, &temperature, &visibility, &location_id, &created_at)
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  return conditions{"foo", 10, cloudCover, 10, 10}
 }
 
 func fetchConditionsFor(lat, long string) (c conditions) {
@@ -52,7 +75,7 @@ func fetchConditionsFor(lat, long string) (c conditions) {
 
 func insertCondition(current conditions) {
   db := openDatabase()
-  _, err := db.Query(`INSERT INTO conditions(cloud_cover, humidity, summary, temperature, visibility) VALUES($1, $2, $3, $4, $5)`, current.CloudCover, current.Humidity, current.Summary, current.Temperature, current.Visibility)
+  _, err := db.Query(`INSERT INTO conditions(cloud_cover, humidity, summary, temperature, visibility, location_id, created_at) VALUES($1, $2, $3, $4, $5, $6, $7)`, current.CloudCover, current.Humidity, current.Summary, current.Temperature, current.Visibility, 1, time.Now())
 
   if err != nil {
     log.Fatal(err)
