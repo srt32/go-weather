@@ -5,6 +5,7 @@ import (
 	forecast "github.com/mlbright/forecast/v2"
   "net/http"
   "log"
+  //_ "github.com/lib/pq"
   "github.com/lib/pq"
   "database/sql"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 func main() {
   http.HandleFunc("/", retrieveLatestConditions)
+  http.HandleFunc("/update", updateData)
 
   err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
   if err != nil {
@@ -24,18 +26,22 @@ func main() {
 }
 
 func retrieveLatestConditions(res http.ResponseWriter, req *http.Request) {
+  latestConditions := fetchFromDatabase()
+
+  data := []byte(fmt.Sprintln(latestConditions))
+  res.Write(data)
+}
+
+func updateData(res http.ResponseWriter, req *http.Request) {
 	lat := "37.7833"
 	long := "-122.4167"
 
 	current := fetchConditionsFor(lat, long)
 	fmt.Println(current)
 
-  insertCondition(current)
+  error := insertCondition(current)
 
-  latestConditions := fetchFromDatabase()
-
-  data := []byte(fmt.Sprintln(latestConditions))
-  res.Write(data)
+  res.Write([]byte(fmt.Sprintln(error)))
 }
 
 func fetchFromDatabase() conditions {
@@ -73,13 +79,15 @@ func fetchConditionsFor(lat, long string) (c conditions) {
 	return
 }
 
-func insertCondition(current conditions) {
+func insertCondition(current conditions) (status bool) {
+  status = true
   db := openDatabase()
   _, err := db.Query(`INSERT INTO conditions(cloud_cover, humidity, summary, temperature, visibility, location_id, created_at) VALUES($1, $2, $3, $4, $5, $6, $7)`, current.CloudCover, current.Humidity, current.Summary, current.Temperature, current.Visibility, 1, time.Now())
 
   if err != nil {
-    log.Fatal(err)
+    status = false
   }
+  return status
 }
 
 func openDatabase() (db *sql.DB) {
@@ -87,10 +95,10 @@ func openDatabase() (db *sql.DB) {
   var connection string
   url := os.Getenv("DATABASE_URL")
   if url == "" {
+    connection = "host=localhost dbname=weather_development sslmode=disable"
+  } else {
     connection, _ = pq.ParseURL(url)
     connection += " sslmode=require"
-  } else {
-    connection = "host=localhost dbname=weather_development sslmode=disable"
   }
 
   db, err := sql.Open("postgres", connection)
