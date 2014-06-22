@@ -1,35 +1,40 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	forecast "github.com/mlbright/forecast/v2"
-  "net/http"
-  "log"
-  //_ "github.com/lib/pq"
-  "github.com/lib/pq"
-  "database/sql"
+	"log"
+	"net/http"
+	//_ "github.com/lib/pq"
+	"database/sql"
+	"github.com/lib/pq"
 	"os"
-  "time"
+	"time"
 )
 
 // createdb weather_development
 // create table conditions(cloud_cover float, humidity float, summary string, temperature float, visibility float, location_id int, created_at timestamp);
 
 func main() {
-  http.HandleFunc("/", retrieveLatestConditions)
-  http.HandleFunc("/update", updateData)
+	http.HandleFunc("/", retrieveLatestConditions)
+	http.HandleFunc("/update", updateData)
 
-  err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
-  if err != nil {
-    log.Fatal("Error: %v:", err)
-  }
+	err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	if err != nil {
+		log.Fatal("Error: %v:", err)
+	}
 }
 
 func retrieveLatestConditions(res http.ResponseWriter, req *http.Request) {
-  latestConditions := fetchFromDatabase()
+	latestConditions := fetchFromDatabase()
 
-  data := []byte(fmt.Sprintln(latestConditions))
-  res.Write(data)
+	jsonData, err := json.Marshal(latestConditions)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
+
+	res.Write(jsonData)
 }
 
 func updateData(res http.ResponseWriter, req *http.Request) {
@@ -39,29 +44,29 @@ func updateData(res http.ResponseWriter, req *http.Request) {
 	current := fetchConditionsFor(lat, long)
 	fmt.Println(current)
 
-  error := insertCondition(current)
+	error := insertCondition(current)
 
-  res.Write([]byte(fmt.Sprintln(error)))
+	res.Write([]byte(fmt.Sprintln(error)))
 }
 
 func fetchFromDatabase() conditions {
-  db := openDatabase()
-  latestRecordedConditions := db.QueryRow(`SELECT * FROM conditions WHERE location_id IS NOT NULL ORDER BY created_at ASC LIMIT 1;`)
+	db := openDatabase()
+	latestRecordedConditions := db.QueryRow(`SELECT * FROM conditions WHERE location_id IS NOT NULL ORDER BY created_at ASC LIMIT 1;`)
 
-  var cloudCover float64
-  var humidity float64
-  var summary string
-  var temperature float64
-  var visibility float64
-  var location_id int
-  var created_at time.Time
+	var cloudCover float64
+	var humidity float64
+	var summary string
+	var temperature float64
+	var visibility float64
+	var location_id int
+	var created_at time.Time
 
-  err := latestRecordedConditions.Scan(&cloudCover, &humidity, &summary, &temperature, &visibility, &location_id, &created_at)
-  if err != nil {
-    log.Fatal(err)
-  }
+	err := latestRecordedConditions.Scan(&cloudCover, &humidity, &summary, &temperature, &visibility, &location_id, &created_at)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-  return conditions{summary, temperature, cloudCover, humidity, visibility}
+	return conditions{summary, temperature, cloudCover, humidity, visibility}
 }
 
 func fetchConditionsFor(lat, long string) (c conditions) {
@@ -72,7 +77,7 @@ func fetchConditionsFor(lat, long string) (c conditions) {
 		fmt.Printf("Error occurred in API call: %s", err)
 	}
 
-  current := f.Currently
+	current := f.Currently
 
 	c = conditions{current.Summary, current.Temperature, current.CloudCover, current.Humidity, current.Visibility}
 
@@ -80,32 +85,32 @@ func fetchConditionsFor(lat, long string) (c conditions) {
 }
 
 func insertCondition(current conditions) (status bool) {
-  status = true
-  db := openDatabase()
-  _, err := db.Query(`INSERT INTO conditions(cloud_cover, humidity, summary, temperature, visibility, location_id, created_at) VALUES($1, $2, $3, $4, $5, $6, $7)`, current.CloudCover, current.Humidity, current.Summary, current.Temperature, current.Visibility, 1, time.Now())
+	status = true
+	db := openDatabase()
+	_, err := db.Query(`INSERT INTO conditions(cloud_cover, humidity, summary, temperature, visibility, location_id, created_at) VALUES($1, $2, $3, $4, $5, $6, $7)`, current.CloudCover, current.Humidity, current.Summary, current.Temperature, current.Visibility, 1, time.Now())
 
-  if err != nil {
-    status = false
-  }
-  return status
+	if err != nil {
+		status = false
+	}
+	return status
 }
 
 func openDatabase() (db *sql.DB) {
 
-  var connection string
-  url := os.Getenv("DATABASE_URL")
-  if url == "" {
-    connection = "host=localhost dbname=weather_development sslmode=disable"
-  } else {
-    connection, _ = pq.ParseURL(url)
-    connection += " sslmode=require"
-  }
+	var connection string
+	url := os.Getenv("DATABASE_URL")
+	if url == "" {
+		connection = "host=localhost dbname=weather_development sslmode=disable"
+	} else {
+		connection, _ = pq.ParseURL(url)
+		connection += " sslmode=require"
+	}
 
-  db, err := sql.Open("postgres", connection)
-  if err != nil {
-    log.Fatal(err)
-  }
-  return
+	db, err := sql.Open("postgres", connection)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
 }
 
 type conditions struct {
