@@ -5,7 +5,7 @@ import (
 	forecast "github.com/mlbright/forecast/v2"
   "net/http"
   "log"
-  _ "github.com/lib/pq"
+  "github.com/lib/pq"
   "database/sql"
 	"os"
   "time"
@@ -83,7 +83,17 @@ func insertCondition(current conditions) {
 }
 
 func openDatabase() (db *sql.DB) {
-  db, err := sql.Open("postgres", "host=localhost dbname=weather_development sslmode=disable")
+
+  var connection string
+  url := os.Getenv("DATABASE_URL")
+  if url == "" {
+    connection, _ = pq.ParseURL(url)
+    connection += " sslmode=require"
+  } else {
+    connection = "host=localhost dbname=weather_development sslmode=disable"
+  }
+
+  db, err := sql.Open("postgres", connection)
   if err != nil {
     log.Fatal(err)
   }
