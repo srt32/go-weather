@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	forecast "github.com/mlbright/forecast/v2"
+  "net/http"
   "log"
   _ "github.com/lib/pq"
   "database/sql"
@@ -13,6 +14,15 @@ import (
 // create table conditions(cloud_cover float, humidity float, summary string, temperature float, visibility float, location_id int, created_at timestamp);
 
 func main() {
+  http.HandleFunc("/", retrieveLatestConditions)
+
+  err := http.ListenAndServe(":5000", nil)
+  if err != nil {
+    log.Fatal("Error: %v:", err)
+  }
+}
+
+func retrieveLatestConditions(res http.ResponseWriter, req *http.Request) {
 	lat := "37.7833"
 	long := "-122.4167"
 
@@ -20,6 +30,9 @@ func main() {
 	fmt.Println(current)
 
   insertCondition(current)
+
+  data := []byte("foo")
+  res.Write(data)
 }
 
 func fetchConditionsFor(lat, long string) (c conditions) {
