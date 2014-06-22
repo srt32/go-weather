@@ -6,15 +6,11 @@ import (
 	forecast "github.com/mlbright/forecast/v2"
 	"log"
 	"net/http"
-	//_ "github.com/lib/pq"
 	"database/sql"
 	"github.com/lib/pq"
 	"os"
 	"time"
 )
-
-// createdb weather_development
-// create table conditions(cloud_cover float, humidity float, summary string, temperature float, visibility float, location_id int, created_at timestamp);
 
 func main() {
 	http.HandleFunc("/", retrieveLatestConditions)
@@ -96,7 +92,6 @@ func insertCondition(current conditions) (status bool) {
 }
 
 func openDatabase() (db *sql.DB) {
-
 	var connection string
 	url := os.Getenv("DATABASE_URL")
 	if url == "" {
@@ -110,6 +105,7 @@ func openDatabase() (db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return
 }
 
