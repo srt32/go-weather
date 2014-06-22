@@ -1,0 +1,14 @@
+{
+	"ImportPath": "github.com/srt32/go-weather",
+	"GoVersion": "go1.2.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Rev": "ae7391529ced9c12f06bf01eae33dadb4c70e49f"
+		},
+		{
+			"ImportPath": "github.com/mlbright/forecast/v2",
+			"Rev": "ae86320f8f941b171666caf786bce7abadba895b"
+		}
+	]
+}

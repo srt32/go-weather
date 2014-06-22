@@ -17,7 +17,7 @@ import (
 func main() {
   http.HandleFunc("/", retrieveLatestConditions)
 
-  err := http.ListenAndServe(":5000", nil)
+  err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
   if err != nil {
     log.Fatal("Error: %v:", err)
   }
